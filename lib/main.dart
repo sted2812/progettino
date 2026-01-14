@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+
+// ENUM per il Tema
+enum ThemeOption { automatico, light, dark }
+
+
 void main() {
   runApp(const MyApp());
 }
