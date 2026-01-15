@@ -259,7 +259,11 @@ class MusicService {
   }
 
   static void togglePlayPause() {
-    if (isPlayingNotifier.value) pause(); else play();
+    if (isPlayingNotifier.value) {
+      pause();
+    } else {
+      play();
+    }
   }
 
   static void seek(Duration position) {
@@ -296,7 +300,9 @@ class MusicService {
       positionNotifier.value = Duration.zero;
       _hasCountedCurrentPlay = false;
     } else {
-      if (hasNext()) next(); else { pause(); positionNotifier.value = Duration.zero; }
+      if (hasNext()) {
+        next();
+      } else { pause(); positionNotifier.value = Duration.zero; }
     }
   }
 
@@ -323,7 +329,11 @@ class MusicService {
     } else {
       nextIndex = _currentIndex + 1;
       if (nextIndex >= _currentPlaylist.length) {
-        if (loopModeNotifier.value == LoopMode.playlist) nextIndex = 0; else return;
+        if (loopModeNotifier.value == LoopMode.playlist) {
+          nextIndex = 0;
+        } else {
+          return;
+        }
       }
     }
     _currentIndex = nextIndex;
@@ -342,7 +352,11 @@ class MusicService {
     } else {
       prevIndex = _currentIndex - 1;
       if (prevIndex < 0) {
-        if (loopModeNotifier.value == LoopMode.playlist) prevIndex = _currentPlaylist.length - 1; else return;
+        if (loopModeNotifier.value == LoopMode.playlist) {
+          prevIndex = _currentPlaylist.length - 1;
+        } else {
+          return;
+        }
       }
     }
     _currentIndex = prevIndex;
