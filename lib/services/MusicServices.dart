@@ -21,6 +21,8 @@ class MusicService {
   static Timer? _playerTimer;
   static bool _hasCountedCurrentPlay = false;
 
+  static Set<int> favoriteFolderIds = {};
+
   static Database? _database;
 
   static Future<Database> get database async {
@@ -41,7 +43,6 @@ class MusicService {
   }
 
   static Future _createDB(Database db, int version) async {
-    // Tabella Canzoni
     await db.execute('''
     CREATE TABLE songs (
       id INTEGER PRIMARY KEY,
@@ -54,7 +55,6 @@ class MusicService {
     )
     ''');
 
-    // Tabella Cartelle
     await db.execute('''
     CREATE TABLE folders (
       id INTEGER PRIMARY KEY,
@@ -96,7 +96,7 @@ class MusicService {
     return null;
   }
 
-  // Gestione database canzoni
+  // Gestione canzoni
   static Future<List<Song>> getSongsInFolder(String folderName) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('songs', where: 'folderName = ?', whereArgs: [folderName]);
@@ -156,7 +156,7 @@ class MusicService {
     ));
   }
 
-  // Gestione database cartelle
+  // Gestione cartelle
   static Future<List<Folder>> getUserFolders() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('folders');
@@ -172,13 +172,31 @@ class MusicService {
   static Future<List<Folder>> getFavoriteFolders() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('folders', where: 'isFavorite = 1');
-    return List.generate(maps.length, (i) => Folder(
+
+    final folders = List.generate(maps.length, (i) => Folder(
       id: maps[i]['id'],
       name: maps[i]['name'],
       imagePath: maps[i]['imagePath'],
       isSpecial: maps[i]['isSpecial'] == 1,
       mp3SortType: SortType.values[maps[i]['mp3SortType'] ?? 0],
     ));
+
+    favoriteFolderIds = folders.map((f) => f.id).toSet();
+
+    return folders;
+  }
+
+  static Future<void> toggleFolderFavorite(int folderId) async {
+    final db = await database;
+    final isFav = favoriteFolderIds.contains(folderId);
+
+    if (isFav) {
+      favoriteFolderIds.remove(folderId);
+      await db.update('folders', {'isFavorite': 0}, where: 'id = ?', whereArgs: [folderId]);
+    } else {
+      favoriteFolderIds.add(folderId);
+      await db.update('folders', {'isFavorite': 1}, where: 'id = ?', whereArgs: [folderId]);
+    }
   }
 
   static Future<void> addUserFolder(String name) async {
@@ -189,6 +207,7 @@ class MusicService {
   static Future<void> deleteUserFolder(int id) async {
     final db = await database;
     await db.delete('folders', where: 'id = ?', whereArgs: [id]);
+    favoriteFolderIds.remove(id);
   }
 
   static Future<void> updateUserFolderImage(int id, String imagePath) async {
@@ -208,7 +227,7 @@ class MusicService {
     return favs.isNotEmpty ? favs[Random().nextInt(favs.length)] : null;
   }
 
-  // Logica Player
+  // Logica player
   static void playTrack(Song song, List<Song> contextPlaylist) {
     _originalPlaylist = List.from(contextPlaylist);
     if (isShuffleNotifier.value) {
@@ -259,11 +278,7 @@ class MusicService {
   }
 
   static void togglePlayPause() {
-    if (isPlayingNotifier.value) {
-      pause();
-    } else {
-      play();
-    }
+    if (isPlayingNotifier.value) pause(); else play();
   }
 
   static void seek(Duration position) {
@@ -300,9 +315,7 @@ class MusicService {
       positionNotifier.value = Duration.zero;
       _hasCountedCurrentPlay = false;
     } else {
-      if (hasNext()) {
-        next();
-      } else { pause(); positionNotifier.value = Duration.zero; }
+      if (hasNext()) next(); else { pause(); positionNotifier.value = Duration.zero; }
     }
   }
 
@@ -329,11 +342,7 @@ class MusicService {
     } else {
       nextIndex = _currentIndex + 1;
       if (nextIndex >= _currentPlaylist.length) {
-        if (loopModeNotifier.value == LoopMode.playlist) {
-          nextIndex = 0;
-        } else {
-          return;
-        }
+        if (loopModeNotifier.value == LoopMode.playlist) nextIndex = 0; else return;
       }
     }
     _currentIndex = nextIndex;
@@ -352,11 +361,7 @@ class MusicService {
     } else {
       prevIndex = _currentIndex - 1;
       if (prevIndex < 0) {
-        if (loopModeNotifier.value == LoopMode.playlist) {
-          prevIndex = _currentPlaylist.length - 1;
-        } else {
-          return;
-        }
+        if (loopModeNotifier.value == LoopMode.playlist) prevIndex = _currentPlaylist.length - 1; else return;
       }
     }
     _currentIndex = prevIndex;
