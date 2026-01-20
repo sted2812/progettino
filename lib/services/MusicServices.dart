@@ -4,25 +4,21 @@ import 'package:flutter/foundation.dart';
 import 'package:mp3/main.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart'; 
+import 'package:image_picker/image_picker.dart'; 
 
 class MusicService {
   static final ValueNotifier<bool> isPlayingNotifier = ValueNotifier(false);
   static final ValueNotifier<Duration> positionNotifier = ValueNotifier(Duration.zero);
   static final ValueNotifier<Duration> durationNotifier = ValueNotifier(const Duration(minutes: 3, seconds: 30));
-
   static final ValueNotifier<LoopMode> loopModeNotifier = ValueNotifier(LoopMode.none);
   static final ValueNotifier<bool> isShuffleNotifier = ValueNotifier(false);
-
   static List<Song> _currentPlaylist = [];
   static List<Song> _originalPlaylist = [];
   static int _currentIndex = -1;
   static Timer? _playerTimer;
   static bool _hasCountedCurrentPlay = false;
-
   static Set<int> favoriteFolderIds = {};
-
   static Database? _database;
 
   static Future<Database> get database async {
@@ -34,12 +30,7 @@ class MusicService {
   static Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   static Future _createDB(Database db, int version) async {
@@ -54,7 +45,6 @@ class MusicService {
       playCount INTEGER DEFAULT 0
     )
     ''');
-
     await db.execute('''
     CREATE TABLE folders (
       id INTEGER PRIMARY KEY,
@@ -67,7 +57,7 @@ class MusicService {
     ''');
   }
 
-  // Selezione file
+  // Selezione file-
   static Future<Map<String, String>?> pickSongFromDevice() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
@@ -75,7 +65,7 @@ class MusicService {
         PlatformFile file = result.files.single;
         return {
           'title': file.name.replaceAll('.mp3', '').replaceAll('.m4a', ''),
-          'artist': 'Sconosciuto',
+          'artist': 'Sconosciuto', 
           'filePath': file.path!,
         };
       }
@@ -110,7 +100,7 @@ class MusicService {
       playCount: maps[i]['playCount'],
     ));
   }
-
+  
   static Future<void> addSong(String title, String artist, String folderName, String filePath) async {
     final db = await database;
     await db.insert('songs', {
@@ -121,6 +111,16 @@ class MusicService {
       'filePath': filePath,
       'playCount': 0,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<void> updateSongImage(int id, String imagePath) async {
+    final db = await database;
+    await db.update(
+      'songs',
+      {'imagePath': imagePath},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   static Future<void> deleteSong(int id) async {
@@ -156,7 +156,7 @@ class MusicService {
     ));
   }
 
-  // Gestione cartelle
+  // Metodi cartelle
   static Future<List<Folder>> getUserFolders() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('folders');
@@ -172,7 +172,6 @@ class MusicService {
   static Future<List<Folder>> getFavoriteFolders() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('folders', where: 'isFavorite = 1');
-
     final folders = List.generate(maps.length, (i) => Folder(
       id: maps[i]['id'],
       name: maps[i]['name'],
@@ -180,16 +179,13 @@ class MusicService {
       isSpecial: maps[i]['isSpecial'] == 1,
       mp3SortType: SortType.values[maps[i]['mp3SortType'] ?? 0],
     ));
-
     favoriteFolderIds = folders.map((f) => f.id).toSet();
-
     return folders;
   }
 
   static Future<void> toggleFolderFavorite(int folderId) async {
     final db = await database;
     final isFav = favoriteFolderIds.contains(folderId);
-
     if (isFav) {
       favoriteFolderIds.remove(folderId);
       await db.update('folders', {'isFavorite': 0}, where: 'id = ?', whereArgs: [folderId]);
@@ -214,7 +210,7 @@ class MusicService {
     final db = await database;
     await db.update('folders', {'imagePath': imagePath}, where: 'id = ?', whereArgs: [id]);
   }
-
+  
   static Future<List<Folder>> getRandomUserFolders(int count) async {
     final folders = await getUserFolders();
     final userOnly = folders.where((f) => !f.isSpecial).toList();
@@ -227,7 +223,7 @@ class MusicService {
     return favs.isNotEmpty ? favs[Random().nextInt(favs.length)] : null;
   }
 
-  // Logica player
+  // Metodi player
   static void playTrack(Song song, List<Song> contextPlaylist) {
     _originalPlaylist = List.from(contextPlaylist);
     if (isShuffleNotifier.value) {
@@ -248,7 +244,7 @@ class MusicService {
     currentTrackNotifier.value = track;
     resetPosition();
     _hasCountedCurrentPlay = false;
-    play();
+    play(); 
   }
 
   static void resetPosition() {
@@ -313,7 +309,7 @@ class MusicService {
   static void _handleAutoNext() {
     if (loopModeNotifier.value == LoopMode.single) {
       positionNotifier.value = Duration.zero;
-      _hasCountedCurrentPlay = false;
+      _hasCountedCurrentPlay = false; 
     } else {
       if (hasNext()) next(); else { pause(); positionNotifier.value = Duration.zero; }
     }
@@ -321,7 +317,7 @@ class MusicService {
 
   static bool hasNext() {
     if (_currentPlaylist.isEmpty) return false;
-    if (loopModeNotifier.value == LoopMode.playlist) return true;
+    if (loopModeNotifier.value == LoopMode.playlist) return true; 
     if (isShuffleNotifier.value) return true;
     return _currentIndex < _currentPlaylist.length - 1;
   }
@@ -329,7 +325,7 @@ class MusicService {
   static bool hasPrevious() {
     if (_currentPlaylist.isEmpty) return false;
     if (positionNotifier.value.inSeconds > 5) return true;
-    if (loopModeNotifier.value == LoopMode.playlist) return true;
+    if (loopModeNotifier.value == LoopMode.playlist) return true; 
     if (isShuffleNotifier.value) return true;
     return _currentIndex > 0;
   }
@@ -377,7 +373,7 @@ class MusicService {
   }
 
   static void activateSingleLoop() => loopModeNotifier.value = LoopMode.single;
-
+  
   static void toggleShuffle() {
     isShuffleNotifier.value = !isShuffleNotifier.value;
     if (_currentPlaylist.isEmpty) return;
