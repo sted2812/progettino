@@ -1,0 +1,436 @@
+import 'dart:async';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:mp3/oggetti/VinylPlayerWidget.dart';
+import 'package:mp3/oggetti/cricket.dart';
+import 'package:mp3/ui/TopBar.dart';
+import 'package:mp3/main.dart';
+import 'package:mp3/services/MusicServices.dart';
+
+double calc(double i, double perc) {
+  if (perc == 0) return 0;
+  return i / perc;
+}
+
+class Playerpage extends StatefulWidget {
+  const Playerpage({super.key});
+
+  @override
+  State<Playerpage> createState() => _PlayerpageState();
+}
+
+class _PlayerpageState extends State<Playerpage> {
+  int _backwardTrigger = 0;
+  int _forwardTrigger = 0;
+
+  Offset _transitionOffset = Offset.zero;
+  double _rotationDirection = 1.0;
+
+  Timer? _listenTimer;
+  static const int _secondsToCountPlay = 10;
+  bool _playCounted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    MusicService.isPlayingNotifier.addListener(_handlePlayStateChange);
+
+    if (MusicService.isPlayingNotifier.value) {
+      _startListenTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    MusicService.isPlayingNotifier.removeListener(_handlePlayStateChange);
+    _listenTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handlePlayStateChange() {
+    if (MusicService.isPlayingNotifier.value) {
+      _startListenTimer();
+    } else {
+      _stopListenTimer();
+    }
+  }
+
+  void _startListenTimer() {
+    _listenTimer?.cancel();
+    if (_playCounted) return;
+
+    _listenTimer = Timer(const Duration(seconds: _secondsToCountPlay), () {
+      final current = currentTrackNotifier.value;
+      if (current != null && current.id != null && mounted) {
+        MusicService.incrementPlayCount(current.id!);
+        _playCounted = true;
+      }
+    });
+  }
+
+  void _stopListenTimer() {
+    _listenTimer?.cancel();
+  }
+
+  void _handleSkip(bool forward) {
+    _stopListenTimer();
+    _playCounted = false;
+
+    setState(() {
+      _rotationDirection = forward ? 1.0 : -1.0;
+      _transitionOffset = forward ? const Offset(-1.2, 0) : const Offset(1.2, 0);
+
+      if (forward) {
+        _forwardTrigger++;
+        MusicService.next();
+      } else {
+        _backwardTrigger++;
+        MusicService.previous();
+      }
+    });
+  }
+
+  void _handleEject() {
+    _stopListenTimer();
+    MusicService.eject();
+    setState(() {
+      _transitionOffset = const Offset(0, -1.5);
+    });
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        currentTrackNotifier.value = null;
+        MusicService.resetPosition();
+      }
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screensize = screenHeight * screenWidth;
+
+    double vinylSize = screenWidth * 0.72;
+    double maxVinylAvailableHeight = screenHeight * 0.35;
+    if (vinylSize > maxVinylAvailableHeight) vinylSize = maxVinylAvailableHeight;
+    double vinylTop = screenHeight * 0.18 + (maxVinylAvailableHeight - vinylSize) / 2;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          Topbar(height: screenHeight * 0.4, width: screenWidth),
+
+          Positioned(
+            top: screenHeight * 0.08,
+            left: 20,
+            child: Text(
+              'Player',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.secondary,
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          // Area disco
+          Positioned(
+            top: vinylTop,
+            left: 0,
+            right: 0,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: MusicService.isPlayingNotifier,
+              builder: (context, isPlaying, _) {
+                return ValueListenableBuilder<Track?>(
+                  valueListenable: currentTrackNotifier,
+                  builder: (context, track, child) {
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeInOutCubic,
+                      switchOutCurve: Curves.easeInOutCubic,
+                      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
+                        );
+                      },
+                      transitionBuilder: (Widget transitionChild, Animation<double> animation) {
+                        final currentId = track?.id ?? -1;
+                        final isEntering = transitionChild.key == ValueKey(currentId);
+
+                        if (isEntering) {
+                          return RotationTransition(
+                            turns: Tween<double>(begin: -_rotationDirection, end: 0.0).animate(animation),
+                            child: FadeTransition(opacity: animation, child: transitionChild),
+                          );
+                        } else {
+                          return RotationTransition(
+                            turns: Tween<double>(begin: 0.0, end: _rotationDirection).animate(animation),
+                            child: FadeTransition(opacity: animation, child: transitionChild),
+                          );
+                        }
+                      },
+                      child: track == null
+                          ? Container(
+                        key: const ValueKey(-1),
+                        height: vinylSize,
+                        width: vinylSize,
+                        child: Center(
+                          child: Icon(
+                            MyFlutterApp.cricket,
+                            size: vinylSize * 0.4,
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                          ),
+                        ),
+                      )
+                          : VinylPlayerWidget(
+                        key: ValueKey(track.id),
+                        size: vinylSize,
+                        albumArtUrl: track.imagePath ?? 'https://placehold.co/300x300/1a1a1a/FFFFFF?text=${Uri.encodeComponent(track.title)}',
+                        isPlaying: isPlaying,
+                        onPlayPause: MusicService.togglePlayPause,
+                        onSkip: _handleSkip,
+                        onStopPlayback: _handleEject,
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+
+          Positioned(
+            top: screenHeight * 0.62,
+            left: 20,
+            right: 20,
+            child: ValueListenableBuilder<Track?>(
+              valueListenable: currentTrackNotifier,
+              builder: (context, currentTrack, child) {
+                if (currentTrack == null) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Nessun brano",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Silenzio... Troppo silenzio...",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      currentTrack.title,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "${currentTrack.artist ?? 'Artista sconosciuto'} • ${currentTrack.folderName}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
+          // Barra di avanzamento
+          Positioned(
+            top: screenHeight * 0.70,
+            left: 25,
+            right: 25,
+            child: ValueListenableBuilder<Track?>(
+              valueListenable: currentTrackNotifier,
+              builder: (context, track, child) {
+                if (track == null) return const SizedBox.shrink();
+
+                return ValueListenableBuilder<Duration>(
+                    valueListenable: MusicService.positionNotifier,
+                    builder: (context, position, _) {
+                      return ValueListenableBuilder<Duration>(
+                          valueListenable: MusicService.durationNotifier,
+                          builder: (context, duration, _) {
+                            return Column(
+                              children: [
+                                SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    trackHeight: 4,
+                                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                                    activeTrackColor: Theme.of(context).colorScheme.secondary,
+                                    inactiveTrackColor: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                                    thumbColor: Theme.of(context).colorScheme.secondary,
+                                  ),
+                                  child: Slider(
+                                    value: position.inSeconds.toDouble().clamp(0.0, duration.inSeconds.toDouble()),
+                                    max: duration.inSeconds.toDouble(),
+                                    onChanged: (value) {
+                                      MusicService.seek(Duration(seconds: value.toInt()));
+                                    },
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        _formatDuration(position),
+                                        style: TextStyle(color: Theme.of(context).colorScheme.secondary.withOpacity(0.6), fontSize: 12),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        _formatDuration(duration),
+                                        style: TextStyle(color: Theme.of(context).colorScheme.secondary.withOpacity(0.6), fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                      );
+                    }
+                );
+              },
+            ),
+          ),
+
+          // Controlli di riproduzione
+          Positioned(
+            top: screenHeight * 0.78 - (screensize / calc(screensize, 45)) / 2,
+            left: 0,
+            right: 0,
+            child: AnimatedBuilder(
+                animation: Listenable.merge([
+                  MusicService.positionNotifier,
+                  MusicService.loopModeNotifier,
+                  MusicService.isShuffleNotifier,
+                  currentTrackNotifier,
+                  MusicService.isPlayingNotifier
+                ]),
+                builder: (context, _) {
+                  final bool enableBack = MusicService.hasPrevious();
+                  final bool enableForward = MusicService.hasNext();
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: MusicService.toggleShuffle,
+                        icon: Icon(
+                          CupertinoIcons.shuffle,
+                          color: MusicService.isShuffleNotifier.value ? Colors.blue : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+
+                      IconButton(
+                        onPressed: enableBack ? () => _handleSkip(false) : null,
+                        iconSize: screensize / calc(screensize, 60),
+                        color: enableBack
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                          child: Icon(CupertinoIcons.backward_fill, key: ValueKey(_backwardTrigger)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      IconButton(
+                        onPressed: MusicService.togglePlayPause,
+                        iconSize: screensize / calc(screensize, 60),
+                        color: Theme.of(context).colorScheme.secondary,
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          transitionBuilder: (child, animation) {
+                            return RotationTransition(
+                              turns: animation,
+                              child: ScaleTransition(scale: animation, child: child),
+                            );
+                          },
+                          child: Icon(
+                            MusicService.isPlayingNotifier.value
+                                ? CupertinoIcons.pause_fill
+                                : CupertinoIcons.arrowtriangle_right_fill,
+                            key: ValueKey(MusicService.isPlayingNotifier.value),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      IconButton(
+                        onPressed: enableForward ? () => _handleSkip(true) : null,
+                        iconSize: screensize / calc(screensize, 60),
+                        color: enableForward
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                          child: Icon(CupertinoIcons.forward_fill, key: ValueKey(_forwardTrigger)),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+
+                      GestureDetector(
+                        onTap: MusicService.toggleLoop,
+                        onLongPress: MusicService.activateSingleLoop,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Icon(
+                            MusicService.loopModeNotifier.value == LoopMode.single
+                                ? CupertinoIcons.repeat_1
+                                : CupertinoIcons.repeat,
+                            color: MusicService.loopModeNotifier.value == LoopMode.none ? Colors.grey : Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
