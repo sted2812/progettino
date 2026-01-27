@@ -1,0 +1,400 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:mp3/main.dart';
+import 'package:mp3/services/MusicServices.dart';
+
+class MiniPlayer extends StatefulWidget {
+  const MiniPlayer({super.key});
+
+  @override
+  State<MiniPlayer> createState() => _MiniPlayerState();
+}
+
+class _MiniPlayerState extends State<MiniPlayer> {
+  bool _isEjecting = false; 
+  int _backwardTrigger = 0;
+  int _forwardTrigger = 0;
+  int _closeTrigger = 0; 
+
+  List<Song> _currentPlaylist = [];
+  int _currentIndex = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    currentTrackNotifier.addListener(_onTrackChanged);
+    if (currentTrackNotifier.value != null) {
+      _onTrackChanged();
+    }
+  }
+
+  @override
+  void dispose() {
+    currentTrackNotifier.removeListener(_onTrackChanged);
+    super.dispose();
+  }
+
+  void _onTrackChanged() async {
+    final current = currentTrackNotifier.value;
+    if (current == null) {
+      if (mounted) {
+        setState(() {
+          _currentPlaylist = [];
+          _currentIndex = -1;
+        });
+      }
+      return;
+    }
+
+    if (_currentPlaylist.isEmpty || _currentPlaylist.first.folderName != current.folderName) {
+      final songs = await MusicService.getSongsInFolder(current.folderName);
+      if (mounted) {
+        setState(() {
+          _currentPlaylist = songs;
+        });
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _currentIndex = _currentPlaylist.indexWhere((s) => s.id == current.id);
+      });
+    }
+  }
+
+  double calc(double i, double perc) {
+    if (perc == 0) return 0;
+    return i / perc;
+  }
+
+  IconData _getIconForFolder(String name) {
+    switch (name.toLowerCase()) {
+      case "pioggia": return CupertinoIcons.umbrella_fill;
+      case "soleggiato": return CupertinoIcons.sun_haze_fill;
+      case "musica in viaggio": return CupertinoIcons.car_fill;
+      case "studio": return CupertinoIcons.book_fill;
+      case "relax": return CupertinoIcons.music_house_fill;
+      case "giorno": return CupertinoIcons.sun_max;
+      case "pomeriggio": return CupertinoIcons.sunset_fill;
+      case "sera": return CupertinoIcons.moon_fill;
+      case "allenamento": return CupertinoIcons.bolt_fill;
+      default: return CupertinoIcons.music_albums_fill; 
+    }
+  }
+
+  void _handleEject() {
+    MusicService.eject();
+    setState(() {
+      _isEjecting = true;
+      _closeTrigger++;
+    });
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        currentTrackNotifier.value = null;
+        MusicService.resetPosition();
+        setState(() {
+          _isEjecting = false;
+        });
+      }
+    });
+  }
+
+  void _handleSkip(bool forward) {
+    setState(() {
+      if (forward) {
+        _forwardTrigger++;
+      } else {
+        _backwardTrigger++;
+      }
+    });
+
+    final current = currentTrackNotifier.value;
+    if (current == null || _currentPlaylist.isEmpty) return;
+
+    if (!forward) {
+      if (MusicService.positionNotifier.value.inSeconds > 5) {
+        MusicService.resetPosition();
+        MusicService.onTrackChange(current); 
+        return;
+      }
+    }
+
+    int nextIndex = _currentIndex;
+    if (forward) {
+      if (_currentIndex < _currentPlaylist.length - 1) {
+        nextIndex++;
+      } else {
+        nextIndex = 0; 
+      }
+    } else {
+      if (_currentIndex > 0) {
+        nextIndex--;
+      } else {
+        nextIndex = _currentPlaylist.length - 1;
+      }
+    }
+
+    if (nextIndex >= 0 && nextIndex < _currentPlaylist.length) {
+      final nextSong = _currentPlaylist[nextIndex];
+      
+      final nextTrack = Track(
+        title: nextSong.title,
+        folderName: nextSong.folderName,
+        artist: nextSong.artist,
+        id: nextSong.id,
+        imagePath: nextSong.imagePath,
+      );
+
+      MusicService.onTrackChange(nextTrack);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screensize = screenHeight * screenWidth;
+
+    final miniPlayerHeight = screenHeight * 0.175;
+    final double bottomPosition = screenHeight * 0.13;
+
+    return ValueListenableBuilder<Track?>(
+      valueListenable: currentTrackNotifier,
+      builder: (context, currentTrack, child) {
+        if (currentTrack == null) return const SizedBox.shrink();
+
+        return AnimatedSlide(
+          offset: _isEjecting ? const Offset(0, -1.5) : Offset.zero,
+          duration: const Duration(milliseconds: 375),
+          curve: Curves.easeInBack, 
+          child: AnimatedOpacity(
+            opacity: _isEjecting ? 0.0 : 1.0,
+            duration: const Duration(milliseconds: 400),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: screenWidth * 0.05,
+                  right: screenWidth * 0.05,
+                  bottom: bottomPosition,
+                  child: GestureDetector(
+                    onTap: () {
+                    },
+                    child: Container(
+                      height: miniPlayerHeight,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color.fromARGB(255, 57, 51, 74).withOpacity(0.95)
+                            : const Color.fromARGB(255, 245, 241, 255).withOpacity(0.95),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                          width: 0.75,
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          Row(
+                            children: [
+                              _buildSongIcon(miniPlayerHeight * 0.7, currentTrack),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // Titolo
+                                    Text(
+                                      currentTrack.title,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.secondary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
+                                    // Cartella
+                                    Text(
+                                      currentTrack.folderName,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
+                                    // Artista
+                                    Text(
+                                      currentTrack.artist ?? '',
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                        fontSize: 10,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
+                                    // Pulsanti di Controllo
+                                    AnimatedBuilder(
+                                      animation: Listenable.merge([
+                                        MusicService.positionNotifier, 
+                                        MusicService.loopModeNotifier, 
+                                        MusicService.isShuffleNotifier, 
+                                        currentTrackNotifier
+                                      ]),
+                                      builder: (context, _) {
+                                        final bool enableBack = MusicService.hasPrevious();
+                                        final bool enableForward = MusicService.hasNext();
+                                        
+                                        return Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            _buildPlayerButton(
+                                              icon: CupertinoIcons.backward_fill,
+                                              trigger: _backwardTrigger,
+                                              onPressed: enableBack ? () => _handleSkip(false) : null,
+                                              screensize: screensize,
+                                              isEnabled: enableBack,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            
+                                            // Tasto Play/Pause
+                                            ValueListenableBuilder<bool>(
+                                              valueListenable: MusicService.isPlayingNotifier,
+                                              builder: (context, isPlaying, _) {
+                                                return IconButton(
+                                                  onPressed: MusicService.togglePlayPause,
+                                                  iconSize: screensize / calc(screensize, 46),
+                                                  padding: EdgeInsets.zero,
+                                                  constraints: const BoxConstraints(),
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                  icon: AnimatedSwitcher(
+                                                    duration: const Duration(milliseconds: 600),
+                                                    transitionBuilder: (child, animation) =>
+                                                        RotationTransition(
+                                                          turns: animation,
+                                                          child: ScaleTransition(scale: animation, child: child),
+                                                        ),
+                                                    switchInCurve: Curves.elasticOut,
+                                                    child: Icon(
+                                                      isPlaying 
+                                                          ? CupertinoIcons.pause_fill 
+                                                          : CupertinoIcons.arrowtriangle_right_fill,
+                                                      key: ValueKey<bool>(isPlaying),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            ),
+                                            
+                                            const SizedBox(width: 10),
+                                            _buildPlayerButton(
+                                              icon: CupertinoIcons.forward_fill,
+                                              trigger: _forwardTrigger,
+                                              onPressed: enableForward ? () => _handleSkip(true) : null,
+                                              screensize: screensize,
+                                              isEnabled: enableForward,
+                                            ),
+                                          ],
+                                        );
+                                      }
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: miniPlayerHeight * 0.2),
+                            ],
+                          ),
+                          
+                          // Tasto eject
+                          Positioned(
+                            top: -5,
+                            right: -5,
+                            child: IconButton(
+                              onPressed: _handleEject,
+                              iconSize: 20,
+                              color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                              icon: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                                switchInCurve: Curves.easeOut,
+                                child: Icon(CupertinoIcons.eject_fill, key: ValueKey<int>(_closeTrigger)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSongIcon(double size, Track track) {
+    IconData iconData = _getIconForFolder(track.folderName);
+    return Container(
+      width: size, height: size,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        image: track.imagePath != null
+            ? DecorationImage(
+                image: NetworkImage(track.imagePath!), 
+                fit: BoxFit.cover
+              )
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: track.imagePath == null 
+          ? Center(
+              child: Icon(
+                iconData,
+                size: size * 0.5,
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildPlayerButton({
+    required IconData icon, 
+    required int trigger, 
+    required VoidCallback? onPressed, 
+    required double screensize,
+    bool isEnabled = true
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      iconSize: screensize / calc(screensize, 46),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      color: isEnabled 
+          ? Theme.of(context).colorScheme.secondary 
+          : Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+        switchInCurve: Curves.easeOut,
+        child: Icon(icon, key: ValueKey<int>(trigger)),
+      ),
+    );
+  }
+}

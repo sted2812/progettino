@@ -1,6 +1,7 @@
 name: mp3
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: 'none' 
+
 version: 1.0.0+1
 
 environment:
@@ -9,19 +10,21 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.8
   flutter_localizations:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  geolocator: ^13.0.1
-  permission_handler: ^11.3.1
+  shared_preferences: ^2.2.2
   sqflite: ^2.3.0
   path: ^1.8.3
-  file_picker: ^6.1.1
+  geolocator: ^13.0.1
+  permission_handler: ^11.3.1
+  http: ^1.2.0
+  geocoding: ^3.0.0
+  file_picker: ^8.0.1
   image_picker: ^1.0.7
-  shared_preferences: ^2.2.2
+  audioplayers: ^6.0.0
+  audio_service: ^0.18.17
 
-  geocoding: any
-  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -29,7 +32,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
   fonts:
     - family: MyFlutterApp
       fonts:
