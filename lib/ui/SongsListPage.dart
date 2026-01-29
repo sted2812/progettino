@@ -1,17 +1,19 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mp3/main.dart'; 
-import 'package:mp3/services/MusicServices.dart'; 
+import 'package:mp3/main.dart';
+import 'package:mp3/services/MusicServices.dart';
 import 'package:mp3/oggetti/ScrollingText.dart';
+import 'package:mp3/localization/AppLocalization.dart';
 
 class SongsListPage extends StatefulWidget {
   final String folderName;
-  final List<Song>? preloadedSongs; 
-  
+  final List<Song>? preloadedSongs;
+
   const SongsListPage({
-    super.key, 
-    required this.folderName, 
-    this.preloadedSongs
+    super.key,
+    required this.folderName,
+    this.preloadedSongs,
   });
 
   @override
@@ -21,7 +23,6 @@ class SongsListPage extends StatefulWidget {
 class _SongsListPageState extends State<SongsListPage> {
   List<Song> _songs = [];
   bool _isLoading = true;
-  
   Offset _tapPosition = Offset.zero;
 
   @override
@@ -48,12 +49,17 @@ class _SongsListPageState extends State<SongsListPage> {
 
   void _deleteSong(Song song) async {
     await MusicService.deleteSong(song.id);
-    _loadSongs(); 
+    _loadSongs();
   }
-  
+
   void _renameSong(Song song, String newName) async {
     await MusicService.renameSong(song.id, newName);
-    _loadSongs(); 
+    _loadSongs();
+  }
+
+  void _renameArtist(Song song, String newArtist) async {
+    await MusicService.updateSongArtist(song.id, newArtist);
+    _loadSongs();
   }
 
   void _pickImageForSong(Song song) async {
@@ -69,11 +75,12 @@ class _SongsListPageState extends State<SongsListPage> {
   }
 
   void _showSongContextMenu(Song song) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
     double left = _tapPosition.dx;
     double top = _tapPosition.dy;
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     if (left > screenWidth - 220) left = screenWidth - 220;
 
     await showMenu(
@@ -95,15 +102,15 @@ class _SongsListPageState extends State<SongsListPage> {
               color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).colorScheme.secondary.withOpacity(0.2), 
-                width: 1.5
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
                   blurRadius: 15,
                   offset: const Offset(0, 5),
-                )
+                ),
               ],
             ),
             clipBehavior: Clip.antiAlias,
@@ -112,7 +119,10 @@ class _SongsListPageState extends State<SongsListPage> {
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 10,
+                  ),
                   color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   child: Column(
                     children: [
@@ -124,8 +134,10 @@ class _SongsListPageState extends State<SongsListPage> {
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.secondary,
                           decoration: TextDecoration.none,
+                          fontFamily: 'Arial',
                         ),
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (song.artist != null)
                         Text(
@@ -133,25 +145,43 @@ class _SongsListPageState extends State<SongsListPage> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondary.withOpacity(0.6),
                             decoration: TextDecoration.none,
+                            fontFamily: 'Arial',
                           ),
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                     ],
                   ),
                 ),
-                
-                _buildInlineMenuItem("Rinomina", CupertinoIcons.pencil, () => _showRenameDialog(song)),
-                _buildInlineMenuItem("Modifica immagine", CupertinoIcons.photo, () => _pickImageForSong(song)),
-                _buildInlineMenuItem("Aggiungi ai preferiti", CupertinoIcons.star, () { /* Placeholder preferiti */ }),
-                
+
                 _buildInlineMenuItem(
-                  "Elimina", 
-                  CupertinoIcons.delete, 
-                  () => _showDeleteConfirmDialog(song), 
-                  color: Colors.redAccent, 
-                  textColor: Colors.redAccent
+                  AppLocalization.of(context).translate("common_rename"),
+                  CupertinoIcons.pencil,
+                  () => _showRenameDialog(song),
+                ),
+                _buildInlineMenuItem(
+                  AppLocalization.of(context).translate("context_menu_artist"),
+                  CupertinoIcons.person_crop_circle,
+                  () => _showArtistDialog(song),
+                ),
+                _buildInlineMenuItem(
+                  AppLocalization.of(
+                    context,
+                  ).translate("context_menu_choose_image"),
+                  CupertinoIcons.photo,
+                  () => _pickImageForSong(song),
+                ),
+
+                _buildInlineMenuItem(
+                  AppLocalization.of(context).translate("common_delete"),
+                  CupertinoIcons.delete,
+                  () => _showDeleteConfirmDialog(song),
+                  color: Colors.red,
+                  textColor: Colors.red,
                 ),
               ],
             ),
@@ -161,7 +191,13 @@ class _SongsListPageState extends State<SongsListPage> {
     );
   }
 
-  Widget _buildInlineMenuItem(String text, IconData icon, VoidCallback action, {Color? color, Color? textColor}) {
+  Widget _buildInlineMenuItem(
+    String text,
+    IconData icon,
+    VoidCallback action, {
+    Color? color,
+    Color? textColor,
+  }) {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
@@ -171,17 +207,25 @@ class _SongsListPageState extends State<SongsListPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: color ?? Theme.of(context).colorScheme.secondary),
+            Icon(
+              icon,
+              size: 20,
+              color: color ?? Theme.of(context).colorScheme.secondary,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                text, 
+                text,
                 style: TextStyle(
-                  fontSize: 15, 
+                  fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: textColor ?? color ?? Theme.of(context).colorScheme.secondary,
+                  color:
+                      textColor ??
+                      color ??
+                      Theme.of(context).colorScheme.secondary,
                   decoration: TextDecoration.none,
-                )
+                  fontFamily: 'Arial',
+                ),
               ),
             ),
           ],
@@ -194,16 +238,39 @@ class _SongsListPageState extends State<SongsListPage> {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
-        title: Text("Elimina brano?", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-        content: Text("Sei sicuro di voler eliminare '${song.title}'?", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+        title: Text(
+          AppLocalization.of(context).translate("song_delete_title"),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary,
+            fontFamily: 'Arial',
+          ),
+        ),
+        content: Text(
+          AppLocalization.of(
+            context,
+          ).translate("song_delete_content").replaceAll("{name}", song.title),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary,
+            fontFamily: 'Arial',
+          ),
+        ),
         actions: [
           CupertinoDialogAction(
-            child: const Text("Annulla", style: TextStyle(color: CupertinoColors.activeBlue)), 
-            onPressed: () => Navigator.pop(ctx)
+            child: Text(
+              AppLocalization.of(context).translate("common_cancel"),
+              style: const TextStyle(
+                color: CupertinoColors.activeBlue,
+                fontFamily: 'Arial',
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
-            child: const Text("Elimina"),
+            child: Text(
+              AppLocalization.of(context).translate("common_delete"),
+              style: const TextStyle(fontFamily: 'Arial'),
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               _deleteSong(song);
@@ -216,37 +283,118 @@ class _SongsListPageState extends State<SongsListPage> {
 
   void _showRenameDialog(Song song) {
     final controller = TextEditingController(text: song.title);
+    _showInputDialog(
+      controller,
+      AppLocalization.of(context).translate("common_rename"),
+      (text) => _renameSong(song, text),
+    );
+  }
+
+  void _showArtistDialog(Song song) {
+    final controller = TextEditingController(text: song.artist);
+    _showInputDialog(
+      controller,
+      AppLocalization.of(context).translate("context_menu_artist"),
+      (text) => _renameArtist(song, text),
+    );
+  }
+
+  void _showInputDialog(
+    TextEditingController controller,
+    String title,
+    Function(String) onSave,
+  ) {
     showCupertinoDialog(
       context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: Text("Rinomina", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: CupertinoTextField(
-            controller: controller, 
-            autofocus: true, 
-            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-              ),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             ),
           ),
-        ),
-        actions: [
-          CupertinoDialogAction(child: const Text("Annulla", style: TextStyle(color: CupertinoColors.activeBlue)), onPressed: () => Navigator.pop(ctx)),
-          CupertinoDialogAction(
-            child: const Text("Salva", style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.bold)), 
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                 _renameSong(song, controller.text);
-              }
-              Navigator.pop(ctx);
-            }
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.secondary,
+                  decoration: TextDecoration.none,
+                  fontFamily: 'Arial',
+                ),
+              ),
+              const SizedBox(height: 20),
+              CupertinoTextField(
+                controller: controller,
+                autofocus: true,
+                cursorColor: CupertinoColors.activeBlue,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontSize: 16,
+                  decoration: TextDecoration.none,
+                  fontFamily: 'Arial',
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withOpacity(0.2),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 15,
+                ),
+              ),
+              const SizedBox(height: 25),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Text(
+                      AppLocalization.of(context).translate("common_cancel"),
+                      style: const TextStyle(
+                        color: CupertinoColors.activeBlue,
+                        fontSize: 17,
+                        fontFamily: 'Arial',
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      if (controller.text.isNotEmpty) {
+                        onSave(controller.text);
+                        Navigator.pop(ctx);
+                      }
+                    },
+                    child: Text(
+                      AppLocalization.of(context).translate("common_save"),
+                      style: const TextStyle(
+                        color: CupertinoColors.activeBlue,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Arial',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -254,7 +402,7 @@ class _SongsListPageState extends State<SongsListPage> {
   Widget _buildGridTextWidget(String text, TextStyle style) {
     const int maxCharsBeforeScroll = 13;
     const double fixedWidth = 80.0;
-    
+
     if (text.length <= maxCharsBeforeScroll) {
       return Center(
         child: Text(
@@ -266,7 +414,7 @@ class _SongsListPageState extends State<SongsListPage> {
         ),
       );
     }
-    
+
     return SizedBox(
       width: fixedWidth,
       child: ShaderMask(
@@ -280,22 +428,22 @@ class _SongsListPageState extends State<SongsListPage> {
               Colors.black,
               Colors.transparent,
             ],
-            stops: [0.0, 0.05, 0.95, 1.0], 
+            stops: [0.0, 0.05, 0.95, 1.0],
           ).createShader(bounds);
         },
         blendMode: BlendMode.dstIn,
         child: ScrollingText(
           text: " " + text,
           style: style,
-          duration: Duration(seconds: 3 + (text.length ~/ 5)), 
-          scrollExtent: 20.0, 
+          duration: Duration(seconds: 3 + (text.length ~/ 5)),
+          scrollExtent: 20.0,
         ),
       ),
     );
   }
 
   Widget _buildPageTitle(BuildContext context, String text) {
-    const int maxCharsForStaticTitle = 18; 
+    const int maxCharsForStaticTitle = 18;
     final screenWidth = MediaQuery.of(context).size.width;
     final double availableWidth = screenWidth - 70;
 
@@ -338,11 +486,9 @@ class _SongsListPageState extends State<SongsListPage> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor, 
-            ),
+            child: Container(color: Theme.of(context).scaffoldBackgroundColor),
           ),
-          
+
           // Pannello principale con la griglia dei brani
           Align(
             alignment: Alignment.bottomCenter,
@@ -355,89 +501,128 @@ class _SongsListPageState extends State<SongsListPage> {
                 ),
                 color: Theme.of(context).scaffoldBackgroundColor,
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  width: 0.5
+                  color:
+                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  width: 0.5,
                 ),
               ),
               padding: EdgeInsets.only(top: screenHeight * 0.055),
-              child: _isLoading 
-                ? const Center(child: CupertinoActivityIndicator())
-                : _songs.isEmpty 
+              child: _isLoading
+                  ? const Center(child: CupertinoActivityIndicator())
+                  : _songs.isEmpty
                   ? Center(
-                      child: Text(
-                        "Cartella vuota",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)
-                        )
-                      )
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3, 
-                        childAspectRatio: 0.65, 
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 30,
+                    child: Text(
+                      AppLocalization.of(context).translate("folder_empty"),
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withOpacity(0.5),
                       ),
-                      itemCount: _songs.length, 
-                      itemBuilder: (context, index) {
-                        final song = _songs[index];
-                        return GestureDetector(
-                          onTapDown: (details) => _tapPosition = details.globalPosition,
-                          onLongPress: () => _showSongContextMenu(song),
-                          child: Column(
-                            children: [
-                              Container(
-                                height: 80, width: 80,
-                                decoration: BoxDecoration(
-                                  color: isDarkMode 
-                                      ? Colors.white.withOpacity(0.05) 
-                                      : Colors.black.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  image: song.imagePath != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(song.imagePath!), 
-                                        fit: BoxFit.cover
-                                      )
-                                    : null,
-                                ),
-                                child: song.imagePath == null
-                                  ? Icon(
-                                      Icons.audiotrack, 
-                                      size: 45, 
-                                      color: Theme.of(context).colorScheme.secondary
-                                    )
-                                  : null,
+                    ),
+                  )
+                  : GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 30,
+                        ),
+                    itemCount: _songs.length,
+                    itemBuilder: (context, index) {
+                      final song = _songs[index];
+
+                      ImageProvider? songImage;
+                      if (song.imagePath != null) {
+                        if (song.imagePath!.startsWith('http')) {
+                          songImage = NetworkImage(song.imagePath!);
+                        } else {
+                          songImage = FileImage(File(song.imagePath!));
+                        }
+                      }
+
+                      return GestureDetector(
+                        onTapDown:
+                            (details) =>
+                                _tapPosition = details.globalPosition,
+                        onTap: () => _playSong(context, song),
+                        onLongPress: () => _showSongContextMenu(song),
+                        child: Column(
+                          children: [
+                            // Icona del brano
+                            Container(
+                              height: 80,
+                              width: 80,
+                              decoration: BoxDecoration(
+                                color:
+                                    isDarkMode
+                                        ? Colors.white.withOpacity(0.05)
+                                        : Colors.black.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                image:
+                                    songImage != null
+                                        ? DecorationImage(
+                                          image: songImage,
+                                          fit: BoxFit.cover,
+                                        )
+                                        : null,
                               ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                width: 80, 
-                                height: 22, 
-                                child: _buildGridTextWidget(song.title, TextStyle(
-                                  color: Theme.of(context).colorScheme.secondary,
+                              child:
+                                  song.imagePath == null
+                                      ? Icon(
+                                        Icons.audiotrack,
+                                        size: 45,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                      )
+                                      : null,
+                            ),
+                            const SizedBox(height: 8),
+                            // Titolo brano
+                            SizedBox(
+                              width: 80,
+                              height: 22,
+                              child: _buildGridTextWidget(
+                                song.title,
+                                TextStyle(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   decoration: TextDecoration.none,
-                                )),
+                                ),
                               ),
-                              if (song.artist != null)
-                                SizedBox(
-                                  width: 80, 
-                                  height: 18, 
-                                  child: _buildGridTextWidget(song.artist!, TextStyle(
-                                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                            ),
+                            // Artista
+                            if (song.artist != null)
+                              SizedBox(
+                                width: 80,
+                                height: 18,
+                                child: _buildGridTextWidget(
+                                  song.artist!,
+                                  TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.secondary.withOpacity(0.6),
                                     fontSize: 10,
                                     decoration: TextDecoration.none,
-                                  )),
+                                  ),
                                 ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
             ),
           ),
 
+          // Titolo Superiore con ShaderMask e spazio iniziale
           Positioned(
             top: screenHeight * 0.08,
             left: 10,
@@ -447,23 +632,28 @@ class _SongsListPageState extends State<SongsListPage> {
                 return const LinearGradient(
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
-                  colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
-                  stops: [0.0, 0.04, 0.92, 1.0], 
+                  colors: [
+                    Colors.transparent,
+                    Colors.black,
+                    Colors.black,
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.04, 0.92, 1.0],
                 ).createShader(bounds);
               },
               blendMode: BlendMode.dstIn,
-              child: _buildPageTitle(context, " " + widget.folderName), 
+              child: _buildPageTitle(context, " " + widget.folderName),
             ),
           ),
-          
+
           Positioned(
             top: screenHeight * 0.0775,
             right: 10,
             child: IconButton(
               icon: Icon(
                 CupertinoIcons.fullscreen_exit,
-                size: 36, 
-                color: Theme.of(context).colorScheme.secondary
+                size: 36,
+                color: Theme.of(context).colorScheme.secondary,
               ),
               onPressed: () => Navigator.of(context).pop(),
             ),

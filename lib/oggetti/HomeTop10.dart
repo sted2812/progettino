@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mp3/main.dart';
+import 'package:mp3/localization/AppLocalization.dart';
 
 class HomeTop10 extends StatelessWidget {
   final List<Song> songs;
@@ -22,13 +24,25 @@ class HomeTop10 extends StatelessWidget {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
-        title: const Text("Azzera Classifica"),
-        content: const Text("Vuoi cancellare le statistiche mensili?"),
+        title: Text(
+          AppLocalization.of(context).translate("home_reset_confirm_title"), 
+          style: TextStyle(color: Theme.of(context).colorScheme.secondary)
+        ),
+        content: Text(
+          AppLocalization.of(context).translate("home_reset_confirm_content"), 
+          style: TextStyle(color: Theme.of(context).colorScheme.secondary)
+        ),
         actions: [
-          CupertinoDialogAction(child: const Text("Annulla"), onPressed: () => Navigator.pop(ctx)),
+          CupertinoDialogAction(
+            child: Text(
+              AppLocalization.of(context).translate("common_cancel"), 
+              style: const TextStyle(color: CupertinoColors.activeBlue)
+            ), 
+            onPressed: () => Navigator.pop(ctx)
+          ),
           CupertinoDialogAction(
             isDestructiveAction: true,
-            child: const Text("Azzera"),
+            child: Text(AppLocalization.of(context).translate("home_reset_chart")), 
             onPressed: () {
               onReset();
               Navigator.pop(ctx);
@@ -43,15 +57,14 @@ class HomeTop10 extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // Box principale
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode 
             ? Colors.white.withOpacity(0.05) 
-            : Colors.white.withOpacity(0.8),
+            : const Color.fromARGB(255, 230, 237, 255).withOpacity(0.8),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
         ),
         boxShadow: isExpanded ? [
           BoxShadow(
@@ -65,6 +78,7 @@ class HomeTop10 extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min, 
         children: [
+          // Header Riquadro
           InkWell(
             onTap: onToggleExpansion,
             child: Padding(
@@ -76,18 +90,24 @@ class HomeTop10 extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isExpanded ? "Top 10 del mese" : "Top 3 del mese",
+                        isExpanded 
+                          ? AppLocalization.of(context).translate("home_top_10_month") 
+                          : AppLocalization.of(context).translate("home_top_3_month"),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.secondary,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                       Text(
-                        isExpanded ? "Visualizza meno" : "Vedi tutte",
+                        isExpanded 
+                          ? AppLocalization.of(context).translate("home_view_less") 
+                          : AppLocalization.of(context).translate("home_view_all"),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                           fontSize: 12,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                     ],
@@ -105,7 +125,7 @@ class HomeTop10 extends StatelessWidget {
             ),
           ),
           
-          // Lista Brani
+          // Lista brani
           Expanded(
             child: ListView.separated(
               controller: scrollController, 
@@ -128,7 +148,10 @@ class HomeTop10 extends StatelessWidget {
                     padding: const EdgeInsets.all(20.0),
                     child: CupertinoButton(
                       color: Theme.of(context).colorScheme.secondary.withOpacity(0.05),
-                      child: const Text("Azzera Classifica", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        AppLocalization.of(context).translate("home_reset_chart"), 
+                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)
+                      ),
                       onPressed: () => _showResetConfirmDialog(context),
                     ),
                   );
@@ -145,11 +168,34 @@ class HomeTop10 extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
-                          child: Text("${index + 1}", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.secondary.withOpacity(0.3), fontSize: 18)),
+                          child: Text(
+                            "${index + 1}", 
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold, 
+                              color: Theme.of(context).colorScheme.secondary.withOpacity(0.3), 
+                              fontSize: 18, 
+                              decoration: TextDecoration.none
+                            )
+                          ),
                         ),
                       ),
-                      title: Text("Nessun brano", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Theme.of(context).colorScheme.secondary.withOpacity(0.4))),
-                      subtitle: Text("-", style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary.withOpacity(0.3))),
+                      title: Text(
+                        AppLocalization.of(context).translate("player_no_track"), 
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600, 
+                          fontSize: 15, 
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.4), 
+                          decoration: TextDecoration.none
+                        )
+                      ),
+                      subtitle: Text(
+                        "-", 
+                        style: TextStyle(
+                          fontSize: 12, 
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.3), 
+                          decoration: TextDecoration.none
+                        )
+                      ),
                    );
                 }
 
@@ -159,11 +205,19 @@ class HomeTop10 extends StatelessWidget {
                 
                 Color borderColor;
                 double borderWidth = 0.5;
-                // Colori di 1°, 2° e 3° classificato
                 if (index == 0) { borderColor = const Color(0xFFFFD700); borderWidth = 2.0; } 
                 else if (index == 1) { borderColor = const Color(0xFFC0C0C0); borderWidth = 2.0; } 
                 else if (index == 2) { borderColor = const Color(0xFFCD7F32); borderWidth = 2.0; } 
                 else { borderColor = Theme.of(context).colorScheme.secondary.withOpacity(0.1); }
+
+                ImageProvider? songImage;
+                if (song.imagePath != null) {
+                  if (song.imagePath!.startsWith('http')) {
+                    songImage = NetworkImage(song.imagePath!);
+                  } else {
+                    songImage = FileImage(File(song.imagePath!));
+                  }
+                }
 
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -173,27 +227,45 @@ class HomeTop10 extends StatelessWidget {
                       color: Colors.transparent, 
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: borderColor, width: borderWidth),
+                      image: songImage != null ? DecorationImage(image: songImage, fit: BoxFit.cover) : null,
                     ),
-                    child: Center(
-                      child: Text("${index + 1}", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.secondary, fontSize: 18)),
-                    ),
+                    child: songImage == null ? Center(
+                      child: Text(
+                        "${index + 1}", 
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold, 
+                          color: Theme.of(context).colorScheme.secondary, 
+                          fontSize: 18, 
+                          decoration: TextDecoration.none
+                        )
+                      ),
+                    ) : null,
                   ),
                   title: Text(
                     song.title,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, decoration: TextDecoration.none),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    song.artist ?? "Sconosciuto",
+                    song.artist ?? AppLocalization.of(context).translate("common_unknown_artist"),
                     style: TextStyle(
                       fontSize: 12, 
-                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                      decoration: TextDecoration.none
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: Text("$playCount ascolti", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.secondary.withOpacity(0.7))),
+                  trailing: Text(
+                    "$playCount asc.", 
+                    style: TextStyle(
+                      fontSize: 12, 
+                      fontWeight: FontWeight.bold, 
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.7), 
+                      decoration: TextDecoration.none
+                    )
+                  ),
                   onTap: null, 
                 );
               },

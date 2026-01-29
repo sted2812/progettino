@@ -127,7 +127,7 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               
-              home: const Navbar(),
+              home: const NavBar(),
             );
           }
         );
