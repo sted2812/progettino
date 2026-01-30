@@ -2,23 +2,24 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mp3/oggetti/MiniPlayer.dart';
 import 'package:mp3/ui/Folderpage.dart';
-import 'package:mp3/ui/Homepage.dart';
-import 'package:mp3/ui/Playerpage.dart';
+import 'package:mp3/ui/HomePage.dart';
+import 'package:mp3/ui/PlayerPage.dart';
 import 'package:mp3/main.dart';
 
-class Navbar extends StatefulWidget {
-  const Navbar({super.key});
+class NavBar extends StatefulWidget {
+  const NavBar({super.key});
 
   @override
-  State<Navbar> createState() => _AnimescionState();
+  State<NavBar> createState() => _NavBarState();
 }
 
-class _AnimescionState extends State<Navbar> {
+class _NavBarState extends State<NavBar> {
   int _selindex = 1;
+
   final List<Widget> _pages = [
-    const Playerpage(),  // Index 0
-    const Homepage(),    // Index 1
-    const Folderpage(), // Index 2
+    const Playerpage(),
+    const Homepage(),
+    const Folderpage(),
   ];
 
   void _onTap(int index) {
@@ -29,18 +30,17 @@ class _AnimescionState extends State<Navbar> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    
     final bool isPlayerPage = _selindex == 0;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Contenuto della Pagina Corrente
           IndexedStack(
             index: _selindex,
             children: _pages,
           ),
           
-          // Logica del Miniplayer
           if (!isPlayerPage)
             ValueListenableBuilder<Track?>(
               valueListenable: currentTrackNotifier,
@@ -52,7 +52,7 @@ class _AnimescionState extends State<Navbar> {
               },
             ),
 
-          // Navigation Bar stile iOS
+          // Navigation bar
           Positioned(
             top: screenHeight * 0.89,
             left: screenWidth * 0.5 - 120,
@@ -62,11 +62,11 @@ class _AnimescionState extends State<Navbar> {
               width: 240,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.25),
                   width: 0.75,
                 ),
                 borderRadius: BorderRadius.circular(90),
-                color: const Color.fromARGB(41, 80, 70, 157),
+                color: (Theme.of(context).brightness == Brightness.dark) ? const Color.fromARGB(202, 69, 64, 99) : const Color.fromARGB(209, 171, 178, 231),
               ),
               child: Stack(
                 children: [
@@ -81,11 +81,12 @@ class _AnimescionState extends State<Navbar> {
                       width: 80,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color.fromARGB(59, 107, 98, 152),
+                        color: (Theme.of(context).brightness == Brightness.dark) ? const Color.fromARGB(59, 107, 98, 152) : const Color.fromARGB(58, 98, 112, 152),
                         borderRadius: BorderRadius.circular(45),
                       ),
                     ),
                   ),
+                  
                   Align(
                     alignment: const Alignment(-0.8, 0),
                     child: IconButton(

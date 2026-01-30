@@ -51,7 +51,7 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
       duration: const Duration(milliseconds: 300),
     );
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn),
     );
   }
 
