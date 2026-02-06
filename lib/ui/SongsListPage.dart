@@ -23,6 +23,7 @@ class SongsListPage extends StatefulWidget {
 class _SongsListPageState extends State<SongsListPage> {
   List<Song> _songs = [];
   bool _isLoading = true;
+
   Offset _tapPosition = Offset.zero;
 
   @override
@@ -68,6 +69,11 @@ class _SongsListPageState extends State<SongsListPage> {
       await MusicService.updateSongImage(song.id, imagePath);
       _loadSongs();
     }
+  }
+
+  void _resetImageForSong(Song song) async {
+    await MusicService.updateSongImage(song.id, null);
+    _loadSongs();
   }
 
   void _playSong(BuildContext context, Song song) {
@@ -174,6 +180,21 @@ class _SongsListPageState extends State<SongsListPage> {
                   ).translate("context_menu_choose_image"),
                   CupertinoIcons.photo,
                   () => _pickImageForSong(song),
+                ),
+
+                if (song.imagePath != null)
+                  _buildInlineMenuItem(
+                    AppLocalization.of(
+                      context,
+                    ).translate("context_menu_reset_image"),
+                    CupertinoIcons.refresh,
+                    () => _resetImageForSong(song),
+                  ),
+
+                _buildInlineMenuItem(
+                  AppLocalization.of(context).translate("context_menu_add_fav"),
+                  CupertinoIcons.star,
+                  () {},
                 ),
 
                 _buildInlineMenuItem(
@@ -456,6 +477,7 @@ class _SongsListPageState extends State<SongsListPage> {
           fontSize: 40,
           fontWeight: FontWeight.bold,
           decoration: TextDecoration.none,
+          fontFamily: 'Arial',
         ),
       );
     }
@@ -469,6 +491,7 @@ class _SongsListPageState extends State<SongsListPage> {
           fontSize: 40,
           fontWeight: FontWeight.bold,
           decoration: TextDecoration.none,
+          fontFamily: 'Arial',
         ),
         duration: const Duration(seconds: 10),
         scrollExtent: 50.0,
@@ -489,7 +512,6 @@ class _SongsListPageState extends State<SongsListPage> {
             child: Container(color: Theme.of(context).scaffoldBackgroundColor),
           ),
 
-          // Pannello principale con la griglia dei brani
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -517,6 +539,7 @@ class _SongsListPageState extends State<SongsListPage> {
                         color: Theme.of(
                           context,
                         ).colorScheme.secondary.withOpacity(0.5),
+                        fontFamily: 'Arial',
                       ),
                     ),
                   )
@@ -550,7 +573,6 @@ class _SongsListPageState extends State<SongsListPage> {
                         onLongPress: () => _showSongContextMenu(song),
                         child: Column(
                           children: [
-                            // Icona del brano
                             Container(
                               height: 80,
                               width: 80,
@@ -581,7 +603,6 @@ class _SongsListPageState extends State<SongsListPage> {
                                       : null,
                             ),
                             const SizedBox(height: 8),
-                            // Titolo brano
                             SizedBox(
                               width: 80,
                               height: 22,
@@ -595,10 +616,10 @@ class _SongsListPageState extends State<SongsListPage> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   decoration: TextDecoration.none,
+                                  fontFamily: 'Arial',
                                 ),
                               ),
                             ),
-                            // Artista
                             if (song.artist != null)
                               SizedBox(
                                 width: 80,
@@ -611,6 +632,7 @@ class _SongsListPageState extends State<SongsListPage> {
                                     ).colorScheme.secondary.withOpacity(0.6),
                                     fontSize: 10,
                                     decoration: TextDecoration.none,
+                                    fontFamily: 'Arial',
                                   ),
                                 ),
                               ),
@@ -622,7 +644,6 @@ class _SongsListPageState extends State<SongsListPage> {
             ),
           ),
 
-          // Titolo Superiore con ShaderMask e spazio iniziale
           Positioned(
             top: screenHeight * 0.08,
             left: 10,

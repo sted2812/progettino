@@ -41,6 +41,7 @@
   "context_menu_remove_fav": "Rimuovi preferito",
   "context_menu_sort_mp3": "Ordina MP3",
   "context_menu_delete": "Elimina",
+  "context_menu_reset_image": "Ripristina immagine",
 
   "song_delete_title": "Elimina MP3",
   "song_delete_content": "Sei sicuro di voler eliminare '{name}'?",

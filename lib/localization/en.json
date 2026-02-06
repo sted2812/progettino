@@ -44,6 +44,7 @@
   "context_menu_remove_fav": "Remove Favorite",
   "context_menu_sort_mp3": "Sort MP3",
   "context_menu_delete": "Delete",
+  "context_menu_reset_image": "Reset Image",
 
   "sort_title": "Sort by",
   "sort_date": "Date Added",

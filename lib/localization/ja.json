@@ -44,6 +44,7 @@
   "context_menu_remove_fav": "お気に入りから削除",
   "context_menu_sort_mp3": "MP3を並べ替え",
   "context_menu_delete": "削除",
+  "context_menu_reset_image": "画像をリセット",
 
   "sort_title": "並べ替え",
   "sort_date": "追加日",
