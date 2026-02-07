@@ -10,15 +10,15 @@ import 'package:mp3/services/ContextServices.dart';
 import 'package:mp3/services/MusicServices.dart';
 import 'package:mp3/localization/AppLocalization.dart';
 
-class Folderpage2 extends StatefulWidget {
+class Folderpage extends StatefulWidget {
   final List<Folder>? preloadedFolders;
   final String? pageTitle;
-  const Folderpage2({super.key, this.preloadedFolders, this.pageTitle});
+  const Folderpage({super.key, this.preloadedFolders, this.pageTitle});
   @override
-  State<Folderpage2> createState() => _Folderpage2State();
+  State<Folderpage> createState() => _FolderpageState();
 }
 
-class _Folderpage2State extends State<Folderpage2> {
+class _FolderpageState extends State<Folderpage> {
   List<Folder> _folders = [];
   bool _isLoading = true;
   bool _didLoadInitialData = false;
@@ -114,7 +114,7 @@ class _Folderpage2State extends State<Folderpage2> {
         if (folder.id == -1) {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (c) => Folderpage2(
+              builder: (c) => Folderpage(
                 pageTitle: AppLocalization.of(context).translate(folder.name),
                 preloadedFolders: ContextService.getAllSpecialFolders(),
               ),

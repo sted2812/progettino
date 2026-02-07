@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mp3/main.dart';
-import 'package:mp3/services/MusicService.dart';
+import 'package:mp3/services/MusicServices.dart';
 import 'package:mp3/localization/AppLocalization.dart';
 
 class FolderFunctions {
