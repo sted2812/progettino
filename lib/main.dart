@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; 
 import 'package:mp3/ui/NavBar.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mp3/localization/AppLocalization.dart';
+import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:mp3/localization/AppLocalization.dart'; 
+import 'package:mp3/services/MusicServices.dart';
 
 enum ThemeOption { automatico, light, dark }
 enum SortType { dataInserimento, alfabetico, alfabeticoInverso, casuale }
 enum LoopMode { none, playlist, single }
 
-final ValueNotifier<ThemeOption> themeNotifier = ValueNotifier(ThemeOption.dark);
 final ValueNotifier<Track?> currentTrackNotifier = ValueNotifier(null);
 final ValueNotifier<Locale> localeNotifier = ValueNotifier(const Locale('it'));
 
@@ -44,7 +44,7 @@ class Song {
     required this.folderName,
     this.filePath,
     this.imagePath,
-    this.playCount = 0,
+    this.playCount = 0, 
   });
 }
 
@@ -60,17 +60,29 @@ class Folder {
     required this.name, 
     this.imagePath, 
     this.isSpecial = false,
-    this.mp3SortType = SortType.dataInserimento,
+    this.mp3SortType = SortType.dataInserimento, 
   });
+}
+
+Future<void> updateLanguage(String langCode) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('language_code', langCode);
+  localeNotifier.value = Locale(langCode);
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
 
-  final String? langCode = prefs.getString('language_code');
-  if (langCode != null) {
-    localeNotifier.value = Locale(langCode);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final String? langCode = prefs.getString('language_code');
+    if (langCode != null) {
+      localeNotifier.value = Locale(langCode);
+    }
+
+    await MusicService.init();
+  } catch (e) {
+    debugPrint("Error during initialization: $e");
   }
 
   runApp(const MyApp());
@@ -81,16 +93,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeOption>(
-      valueListenable: themeNotifier,
-      builder: (context, currentThemeOption, child) {
-        ThemeMode themeMode;
-        switch (currentThemeOption) {
-          case ThemeOption.light: themeMode = ThemeMode.light; break;
-          case ThemeOption.dark: themeMode = ThemeMode.dark; break;
-          default: themeMode = ThemeMode.system; break;
-        }
-
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: MusicService.themeNotifier,
+      builder: (context, currentMode, child) {
         return ValueListenableBuilder<Locale>(
           valueListenable: localeNotifier,
           builder: (context, currentLocale, _) {
@@ -99,10 +104,10 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               theme: ThemeData(
                 brightness: Brightness.light,
-                scaffoldBackgroundColor: const Color.fromARGB(255, 241, 244, 255),
+                scaffoldBackgroundColor: const Color.fromARGB(255, 223, 231, 255),
                 colorScheme: const ColorScheme.light(
-                  surface: Color.fromARGB(187, 255, 255, 255),
-                  primary: Color.fromARGB(255, 189, 187, 203),
+                  surface: Color.fromARGB(134, 128, 136, 255),
+                  primary: Color.fromARGB(255, 198, 214, 255),
                   secondary: Color.fromARGB(255, 19, 19, 19),
                 ),
               ),
@@ -115,10 +120,11 @@ class MyApp extends StatelessWidget {
                   secondary: Color.fromARGB(255, 255, 255, 255),
                 ),
               ),
-              themeMode: themeMode,
+              themeMode: currentMode,
               locale: currentLocale,
               supportedLocales: const [
-                Locale('it'), Locale('en'), Locale('es'), Locale('de'), Locale('fr'), Locale('ja')
+                Locale('it'), Locale('en'), Locale('es'), 
+                Locale('de'), Locale('fr'), Locale('ja')
               ],
               localizationsDelegates: [
                 AppLocalization.delegate,
@@ -126,8 +132,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              
-              home: const NavBar(),
+              home: const NavBar(), 
             );
           }
         );
