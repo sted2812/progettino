@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mp3/main.dart'; 
 import 'package:mp3/localization/AppLocalization.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mp3/services/MusicServices.dart';
 
 typedef OnCreateFolderCallback = void Function();
 typedef OnPickMp3Callback = void Function();
@@ -114,10 +115,10 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
                     child: AnimatedBuilder(
                       animation: _controller,
                       builder: (context, child) {
-                        return ValueListenableBuilder<ThemeOption>(
-                          valueListenable: themeNotifier,
-                          builder: (context, currentThemeOption, child) {
-                            return _buildMainMenu(currentThemeOption);
+                        return ValueListenableBuilder<ThemeMode>(
+                          valueListenable: MusicService.themeNotifier,
+                          builder: (context, currentThemeMode, child) {
+                            return _buildMainMenu(currentThemeMode);
                           },
                         );
                       },
@@ -153,11 +154,9 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
     });
   }
 
-  void _handleThemeToggle(ThemeOption currentThemeOption) {
-    final newTheme = currentThemeOption == ThemeOption.dark
-        ? ThemeOption.light
-        : ThemeOption.dark;
-    widget.onThemeChange(newTheme);
+  void _handleThemeToggle(ThemeMode currentMode) {
+    final newMode = currentMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    MusicService.updateTheme(newMode);
   }
 
   void _openSortSheet() {
@@ -201,7 +200,6 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
     );
   }
 
-  // Selettore lingua
   void _openLanguagePicker() {
     _dismissMenu();
 
@@ -260,6 +258,7 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
                           localeNotifier.value = Locale(newCode);
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setString('language_code', newCode);
+                          widget.onLanguageChange();
                           Navigator.pop(context);
                         },
                       ),
@@ -300,7 +299,7 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
     );
   }
 
-  Widget _buildMainMenu(ThemeOption currentThemeOption) {
+  Widget _buildMainMenu(ThemeMode currentMode) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -320,33 +319,27 @@ class _CustomAnimatedMenuState extends State<CustomAnimatedMenu>
         ),
 
         _buildCustomMenuItem(
-          icon: currentThemeOption == ThemeOption.light
+          icon: currentMode == ThemeMode.light
               ? CupertinoIcons.sun_max
               : CupertinoIcons.moon,
-          title: currentThemeOption == ThemeOption.dark
+          title: currentMode == ThemeMode.dark
               ? AppLocalization.of(context).translate("menu_theme_dark")
               : AppLocalization.of(context).translate("menu_theme_light"),
           trailing: SizedBox(
             height: 24,
             width: 44,
             child: Switch.adaptive(
-              value: currentThemeOption == ThemeOption.dark,
+              value: currentMode == ThemeMode.dark,
               onChanged: (bool isDark) {
-                _handleThemeToggle(currentThemeOption);
+                _handleThemeToggle(currentMode);
               },
-              trackOutlineColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                if (!states.contains(MaterialState.selected)) {
-                  return Colors.transparent;
-                }
-                return null;
-              }),
               inactiveThumbColor: const Color.fromARGB(255, 255, 255, 255),
               inactiveTrackColor: const Color.fromARGB(115, 119, 122, 149),
               activeThumbColor: const Color.fromARGB(255, 255, 255, 255),
               activeTrackColor: const Color.fromARGB(255, 28, 234, 124),
             ),
           ),
-          onTap: () => _handleThemeToggle(currentThemeOption),
+          onTap: () => _handleThemeToggle(currentMode),
         ),
         
         _buildCustomMenuItem(
