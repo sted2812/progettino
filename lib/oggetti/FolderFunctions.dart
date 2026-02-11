@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mp3/main.dart';
-import 'package:mp3/services/MusicServices.dart';
-import 'package:mp3/localization/AppLocalization.dart';
+import 'package:RPM/main.dart';
+import 'package:RPM/services/MusicServices.dart';
+import 'package:RPM/localization/AppLocalization.dart';
 
 class FolderFunctions {
   static List<Folder> applySort({

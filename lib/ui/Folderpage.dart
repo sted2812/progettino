@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mp3/main.dart';
-import 'package:mp3/oggetti/FolderFunctions.dart';
-import 'package:mp3/ui/SongsListPage.dart';
-import 'package:mp3/oggetti/ScrollingText.dart';
-import 'package:mp3/oggetti/CustomAnimatedMenu.dart';
-import 'package:mp3/services/ContextServices.dart';
-import 'package:mp3/services/MusicServices.dart';
-import 'package:mp3/localization/AppLocalization.dart';
+import 'package:RPM/main.dart';
+import 'package:RPM/oggetti/FolderFunctions.dart';
+import 'package:RPM/ui/SongsListPage.dart';
+import 'package:RPM/oggetti/ScrollingText.dart';
+import 'package:RPM/oggetti/CustomAnimatedMenu.dart';
+import 'package:RPM/services/ContextServices.dart';
+import 'package:RPM/services/MusicServices.dart';
+import 'package:RPM/localization/AppLocalization.dart';
 
 class Folderpage extends StatefulWidget {
   final List<Folder>? preloadedFolders;

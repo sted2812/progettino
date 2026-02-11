@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mp3/oggetti/MiniPlayer.dart';
-import 'package:mp3/ui/Folderpage.dart';
-import 'package:mp3/ui/HomePage.dart';
-import 'package:mp3/ui/PlayerPage.dart';
-import 'package:mp3/main.dart';
+import 'package:RPM/oggetti/MiniPlayer.dart';
+import 'package:RPM/ui/Folderpage.dart';
+import 'package:RPM/ui/HomePage.dart';
+import 'package:RPM/ui/PlayerPage.dart';
+import 'package:RPM/main.dart';
 
 class NavBar extends StatefulWidget {
   const NavBar({super.key});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; 
-import 'package:mp3/ui/NavBar.dart';
+import 'package:RPM/ui/NavBar.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart'; 
-import 'package:mp3/localization/AppLocalization.dart'; 
-import 'package:mp3/services/MusicServices.dart';
+import 'package:RPM/localization/AppLocalization.dart'; 
+import 'package:RPM/services/MusicServices.dart';
 
 enum ThemeOption { automatico, light, dark }
 enum SortType { dataInserimento, alfabetico, alfabeticoInverso, casuale }

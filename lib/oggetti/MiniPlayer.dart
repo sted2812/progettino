@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mp3/main.dart';
-import 'package:mp3/services/MusicServices.dart';
+import 'package:RPM/main.dart';
+import 'package:RPM/services/MusicServices.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
