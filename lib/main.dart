@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
           valueListenable: localeNotifier,
           builder: (context, currentLocale, _) {
             return MaterialApp(
-              title: 'MP3 App',
+              title: 'RPM',
               debugShowCheckedModeBanner: false,
               theme: ThemeData(
                 brightness: Brightness.light,

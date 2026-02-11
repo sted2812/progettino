@@ -560,8 +560,7 @@ class MusicService {
     bool isLastSong = !hasNext() && loopModeNotifier.value == LoopMode.none && _currentIndex == _currentPlaylist.length - 1;
 
     if (positionNotifier.value.inSeconds > 2.5 || isLastSong) {
-      seek(Duration.zero);
-      play();
+      _loadTrack(_currentPlaylist[_currentIndex]);
       return;
     }
     
