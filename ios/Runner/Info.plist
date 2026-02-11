@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mp3</string>
+	<string>YTP</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,5 +45,35 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+    <!-- CONFIGURAZIONE AUDIO BACKGROUND -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+        <!-- Aggiungi 'fetch' o 'processing' qui se in futuro servissero -->
+    </array>
+
+    <!-- PERMESSI FUNZIONALITÀ APP -->
+    
+    <!-- Geolocalizzazione (Smart Playlists) -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Questa app usa la tua posizione per suggerirti playlist adatte al contesto (es. palestra, università).</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Questa app usa la tua posizione per suggerirti playlist adatte al contesto.</string>
+    
+    <!-- Libreria Foto (Scegli Immagine Cartella/Brano) -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Questa app necessita di accedere alle foto per permetterti di scegliere le copertine degli album.</string>
+    
+    <!-- File/Musica (Importazione brani) -->
+    <key>NSAppleMusicUsageDescription</key>
+    <string>Questa app necessita di accedere alla libreria musicale per importare i brani.</string>
+
+    <!-- Supporto File Picker -->
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+
 </dict>
 </plist>

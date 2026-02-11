@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; 
 import 'package:mp3/ui/NavBar.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart'; 
 import 'package:mp3/localization/AppLocalization.dart'; 
 import 'package:mp3/services/MusicServices.dart';
@@ -72,6 +73,10 @@ Future<void> updateLanguage(String langCode) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
   try {
     final prefs = await SharedPreferences.getInstance();
