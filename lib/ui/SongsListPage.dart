@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:RPM/main.dart';
-import 'package:RPM/services/MusicServices.dart';
-import 'package:RPM/oggetti/ScrollingText.dart';
-import 'package:RPM/localization/AppLocalization.dart';
+import 'package:rpm/main.dart';
+import 'package:rpm/services/MusicServices.dart';
+import 'package:rpm/oggetti/ScrollingText.dart';
+import 'package:rpm/localization/AppLocalization.dart';
 
 class SongsListPage extends StatefulWidget {
   final String folderName;
@@ -388,7 +388,7 @@ class _SongsListPageState extends State<SongsListPage> {
                     child: Text(
                       AppLocalization.of(context).translate("common_cancel"),
                       style: const TextStyle(
-                        color: CupertinoColors.activeBlue,
+                        color: CupertinoColors.destructiveRed,
                         fontSize: 17,
                         fontFamily: 'Arial',
                       ),

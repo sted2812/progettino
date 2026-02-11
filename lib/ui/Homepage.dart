@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:RPM/services/ContextServices.dart';
-import 'package:RPM/services/MusicServices.dart';
-import 'package:RPM/ui/TopBar.dart';
-import 'package:RPM/main.dart';
-import 'package:RPM/oggetti/HomeCarousel.dart';
-import 'package:RPM/oggetti/HomeTop10.dart';
-import 'package:RPM/localization/AppLocalization.dart';
+import 'package:rpm/services/ContextServices.dart';
+import 'package:rpm/services/MusicServices.dart';
+import 'package:rpm/ui/TopBar.dart';
+import 'package:rpm/main.dart';
+import 'package:rpm/oggetti/HomeCarousel.dart';
+import 'package:rpm/oggetti/HomeTop10.dart';
+import 'package:rpm/localization/AppLocalization.dart';
 
 double calc(double i, double perc) {
   if (perc == 0) return 0;

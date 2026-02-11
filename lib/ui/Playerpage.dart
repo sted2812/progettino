@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:RPM/oggetti/VinylPlayerWidget.dart';
-import 'package:RPM/oggetti/cricket.dart';
-import 'package:RPM/ui/TopBar.dart';
-import 'package:RPM/main.dart'; 
-import 'package:RPM/services/MusicServices.dart';
-import 'package:RPM/localization/AppLocalization.dart'; 
+import 'package:rpm/oggetti/VinylPlayerWidget.dart';
+import 'package:rpm/oggetti/cricket.dart';
+import 'package:rpm/ui/TopBar.dart';
+import 'package:rpm/main.dart'; 
+import 'package:rpm/services/MusicServices.dart';
+import 'package:rpm/localization/AppLocalization.dart'; 
 
 double calc(double i, double perc) {
   if (perc == 0) return 0;

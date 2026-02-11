@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:RPM/main.dart'; 
-import 'package:RPM/localization/AppLocalization.dart'; 
+import 'package:rpm/main.dart'; 
+import 'package:rpm/localization/AppLocalization.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:RPM/services/MusicServices.dart';
+import 'package:rpm/services/MusicServices.dart';
 
 typedef OnCreateFolderCallback = void Function();
 typedef OnPickMp3Callback = void Function();

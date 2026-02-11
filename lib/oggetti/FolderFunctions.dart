@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:RPM/main.dart';
-import 'package:RPM/services/MusicServices.dart';
-import 'package:RPM/localization/AppLocalization.dart';
+import 'package:rpm/main.dart';
+import 'package:rpm/services/MusicServices.dart';
+import 'package:rpm/localization/AppLocalization.dart';
 
 class FolderFunctions {
+  
   static List<Folder> applySort({
     required List<Folder> folders,
     required SortType sortType,
@@ -23,7 +24,7 @@ class FolderFunctions {
         case SortType.alfabetico:
           return nameA.toLowerCase().compareTo(nameB.toLowerCase());
         case SortType.alfabeticoInverso:
-          return nameB.toLowerCase().compareTo(nameA.toLowerCase());
+          return b.name.toLowerCase().compareTo(nameA.toLowerCase());
         case SortType.dataInserimento:
           return a.id.compareTo(b.id);
         case SortType.casuale:
@@ -66,6 +67,9 @@ class FolderFunctions {
     if (left > MediaQuery.of(context).size.width - 220)
       left = MediaQuery.of(context).size.width - 220;
 
+    final Color? removeFavColor = (isFavorite && isDarkMode) ? Colors.blue : (isFavorite ? Colors.amber : null);
+    final Color? removeFavTextColor = (isFavorite && isDarkMode) ? Colors.blue : null;
+
     await showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
@@ -99,6 +103,24 @@ class FolderFunctions {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    child: Text(
+                        AppLocalization.of(context).translate(folder.name),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontFamily: 'Arial',
+                            decoration: TextDecoration.none
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis
+                    )
+                ),
                 _buildAction(
                   context,
                   "context_menu_add_mp3",
@@ -138,28 +160,37 @@ class FolderFunctions {
                       }
                     },
                   ),
+                  
+                  // Opzione Ripristina Immagine (se presente)
+                  if (folder.imagePath != null)
+                     _buildAction(
+                      context,
+                      "context_menu_reset_image",
+                      CupertinoIcons.refresh,
+                      () async {
+                        await MusicService.updateUserFolderImage(folder.id, null);
+                        onRefresh();
+                      },
+                    ),
+
                   _buildAction(
                     context,
-                    isFavorite
-                        ? "context_menu_remove_fav"
-                        : "context_menu_add_fav",
-                    isFavorite
-                        ? CupertinoIcons.star_slash_fill
-                        : CupertinoIcons.star_fill,
+                    isFavorite ? "context_menu_remove_fav" : "context_menu_add_fav",
+                    isFavorite ? CupertinoIcons.star_slash_fill : CupertinoIcons.star_fill,
                     () async {
-                      await MusicService.toggleFolderFavorite(folder.id);
-                      onRefresh();
+                         await MusicService.toggleFolderFavorite(folder.id);
+                         onRefresh();
                     },
-                    color: isFavorite
-                        ? (isDarkMode ? Colors.blue : Colors.amber)
-                        : null,
+                    color: removeFavColor,
+                    textColor: removeFavTextColor
                   ),
                   _buildAction(
                     context,
                     "common_delete",
                     CupertinoIcons.delete,
-                    () => _showDeleteDialog(context, folder, onRefresh),
-                    color: Colors.redAccent,
+                    () => _showDeleteConfirmDialog(context, folder, onRefresh),
+                    color: Colors.red,
+                    textColor: Colors.red,
                   ),
                 ],
               ],
@@ -176,6 +207,7 @@ class FolderFunctions {
     IconData icon,
     VoidCallback onTap, {
     Color? color,
+    Color? textColor,
   }) {
     return InkWell(
       onTap: () {
@@ -192,11 +224,16 @@ class FolderFunctions {
               color: color ?? Theme.of(context).colorScheme.secondary,
             ),
             const SizedBox(width: 12),
-            Text(
-              AppLocalization.of(context).translate(key),
-              style: TextStyle(
-                fontSize: 15,
-                color: color ?? Theme.of(context).colorScheme.secondary,
+            Expanded(
+              child: Text(
+                AppLocalization.of(context).translate(key),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: textColor ?? color ?? Theme.of(context).colorScheme.secondary,
+                  fontFamily: 'Arial',
+                  decoration: TextDecoration.none
+                ),
               ),
             ),
           ],
@@ -205,67 +242,55 @@ class FolderFunctions {
     );
   }
 
-  static void _showRenameDialog(
-    BuildContext context,
-    Folder folder,
-    VoidCallback onRefresh,
-  ) {
+  // DIALOGO RINOMINA (Stile SongsListPage)
+  static void _showRenameDialog(BuildContext context, Folder folder, VoidCallback onRefresh) {
     final controller = TextEditingController(text: folder.name);
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: Text(AppLocalization.of(context).translate("common_rename")),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: CupertinoTextField(controller: controller, autofocus: true),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: Text(AppLocalization.of(context).translate("common_cancel")),
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          CupertinoDialogAction(
-            child: Text(AppLocalization.of(context).translate("common_save")),
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                final db = await MusicService.database;
-                await db.update(
-                  'folders',
-                  {'name': controller.text},
-                  where: 'id = ?',
-                  whereArgs: [folder.id],
-                );
-                onRefresh();
-                Navigator.pop(ctx);
-              }
-            },
-          ),
-        ],
-      ),
+    _showInputDialog(
+        context, 
+        AppLocalization.of(context).translate("common_rename"), 
+        "", 
+        controller, 
+        (text) async {
+            final db = await MusicService.database;
+            await db.update('folders', {'name': text}, where: 'id = ?', whereArgs: [folder.id]);
+            onRefresh();
+        }
     );
   }
 
-  static void _showDeleteDialog(
-    BuildContext context,
-    Folder folder,
-    VoidCallback onRefresh,
-  ) {
-    showCupertinoDialog(
+  static void showCreateFolderDialog(BuildContext context, VoidCallback onRefresh) {
+    final controller = TextEditingController();
+    _showInputDialog(
+        context, 
+        AppLocalization.of(context).translate("folder_new_title"), 
+        AppLocalization.of(context).translate("folder_new_placeholder"), 
+        controller, 
+        (text) async {
+            await MusicService.addUserFolder(text);
+            onRefresh();
+        },
+        isCreate: true
+    );
+  }
+
+  // DIALOGO ELIMINA
+  static void _showDeleteConfirmDialog(BuildContext context, Folder folder, VoidCallback onRefresh) {
+     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: Text(
           AppLocalization.of(context).translate("folder_delete_title"),
+          style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontFamily: 'Arial'),
         ),
         content: Text(
-          AppLocalization.of(context)
-              .translate("folder_delete_content")
-              .replaceAll("{name}", folder.name),
+          AppLocalization.of(context).translate("folder_delete_content").replaceAll("{name}", folder.name),
+          style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontFamily: 'Arial'),
         ),
         actions: [
           CupertinoDialogAction(
             child: Text(
               AppLocalization.of(context).translate("common_cancel"),
-              style: TextStyle(color: CupertinoColors.activeBlue),
+              style: const TextStyle(color: CupertinoColors.activeBlue, fontFamily: 'Arial'),
             ),
             onPressed: () => Navigator.pop(ctx),
           ),
@@ -273,7 +298,7 @@ class FolderFunctions {
             isDestructiveAction: true,
             child: Text(
               AppLocalization.of(context).translate("common_delete"),
-              style: TextStyle(color: CupertinoColors.activeBlue),
+              style: const TextStyle(fontFamily: 'Arial'),
             ),
             onPressed: () async {
               await MusicService.deleteUserFolder(folder.id);
@@ -282,6 +307,126 @@ class FolderFunctions {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  // HELPER DIALOGO INPUT (Stile Unificato)
+  static void _showInputDialog(
+      BuildContext context, 
+      String title, 
+      String placeholder, 
+      TextEditingController controller, 
+      Function(String) onSave,
+      {bool isCreate = false}) {
+    
+    showCupertinoDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.secondary,
+                  decoration: TextDecoration.none,
+                  fontFamily: 'Arial',
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // --- STILE INPUT (Copiato da SongsListPage) ---
+              Material(
+                color: Colors.transparent,
+                child: CupertinoTextField(
+                  controller: controller,
+                  placeholder: placeholder.isNotEmpty ? placeholder : null,
+                  placeholderStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                    fontFamily: 'Arial',
+                  ),
+                  autofocus: true,
+                  cursorColor: CupertinoColors.activeBlue, // 1. Cursore Blu
+                  autocorrect: false,
+                  enableSuggestions: false, // 2. No suggerimenti/sottolineature
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontSize: 16,
+                    decoration: TextDecoration.none, // 3. No decorazioni
+                    fontFamily: 'Arial',
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                ),
+              ),
+              
+              const SizedBox(height: 25),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Text(
+                      AppLocalization.of(context).translate("common_cancel"),
+                      style: const TextStyle(
+                        color: CupertinoColors.activeBlue,
+                        fontSize: 17,
+                        fontFamily: 'Arial',
+                      ),
+                    ),
+                  ),
+                  Container(width: 1, height: 20, color: Theme.of(context).colorScheme.secondary.withOpacity(0.2)),
+                  GestureDetector(
+                    onTap: () {
+                      if (controller.text.isNotEmpty) {
+                        onSave(controller.text);
+                        Navigator.pop(ctx);
+                      }
+                    },
+                    child: Text(
+                      isCreate 
+                        ? AppLocalization.of(context).translate("common_create")
+                        : AppLocalization.of(context).translate("common_save"),
+                      style: const TextStyle(
+                        color: CupertinoColors.activeBlue,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Arial',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

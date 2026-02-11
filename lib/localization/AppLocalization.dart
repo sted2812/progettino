@@ -9,20 +9,17 @@ class AppLocalization {
   static const LocalizationsDelegate<AppLocalization> delegate =
       _AppLocalizationDelegate();
 
-  // FIX: Rimosso 'late' e inizializzata a mappa vuota per evitare crash se load() non viene chiamato
   Map<String, String> _localizedStrings = {};
 
   static AppLocalization of(BuildContext context) {
-    // Utilizziamo un cast sicuro o un fallback per evitare null
     return Localizations.of<AppLocalization>(context, AppLocalization) ?? 
            AppLocalization(const Locale('en')); 
   }
 
   Future<bool> load() async {
     try {
-      // Carica il file JSON corrispondente alla lingua
       String jsonString = await rootBundle.loadString(
-        'lib/localizescion/${locale.languageCode}.json',
+        'lib/localization/${locale.languageCode}.json',
       );
       
       Map<String, dynamic> jsonMap = json.decode(jsonString);
@@ -32,14 +29,12 @@ class AppLocalization {
       return true;
     } catch (e) {
       debugPrint("Errore caricamento lingua: $e");
-      _localizedStrings = {}; // Inizializza vuoto per sicurezza
+      _localizedStrings = {};
       return false;
     }
   }
 
-  // FIX: Metodo sicuro che non crasha se la chiave non esiste
   String translate(String key) {
-    // Se la chiave non esiste nella mappa, restituisce la chiave stessa come fallback
     return _localizedStrings[key] ?? key;
   }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:RPM/main.dart';
-import 'package:RPM/services/LocationServices.dart';
-import 'package:RPM/services/WeatherServices.dart';
+import 'package:rpm/main.dart';
+import 'package:rpm/services/LocationServices.dart';
+import 'package:rpm/services/WeatherServices.dart';
 
 class ContextService {
   static List<Folder> getAllSpecialFolders() {

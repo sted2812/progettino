@@ -1,4 +1,4 @@
-name: RPM
+name: rpm
 description: "Progettino di APPM"
 publish_to: 'none' 
 

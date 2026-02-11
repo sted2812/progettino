@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:RPM/main.dart';
-import 'package:RPM/localization/AppLocalization.dart';
+import 'package:rpm/main.dart';
+import 'package:rpm/localization/AppLocalization.dart';
 
 class HomeTop10 extends StatelessWidget {
   final List<Song> songs;
